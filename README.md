@@ -11,6 +11,13 @@ Aplicativo de finanças do casal: gastos individuais e em conjunto, divisão aut
 - **Login**: e-mail e senha pelo Firebase Authentication, com confirmação de e-mail obrigatória.
 - **Acesso**: só o administrador (definido em `firestore.rules` e `firebase-config.js`) e os e-mails da lista `acesso/membros` leem ou gravam dados. A lista é gerenciada no app, em Ajustes › Quem tem acesso.
 
+## Instalar no celular (PWA)
+
+- **Android (Chrome):** abra o link, toque em **Instalar** no aviso do app ou no menu ⋮ › **Instalar app**.
+- **iPhone (Safari):** abra o link, toque em **Compartilhar** › **Adicionar à Tela de Início**.
+
+O app abre em tela cheia, funciona sem internet (os lançamentos feitos offline sincronizam quando a conexão volta) e avisa quando há uma versão nova. Segurando o ícone, há atalhos para **Nova despesa** e **Nova receita**.
+
 ## Dar acesso a outra pessoa
 
 1. Entre no app como administrador.
@@ -23,3 +30,4 @@ Aplicativo de finanças do casal: gastos individuais e em conjunto, divisão aut
 - `firebase-config.js`: configuração pública do Firebase e e-mail do administrador.
 - `firestore.rules`: cópia das regras de segurança publicadas no Firestore.
 - `manifest.webmanifest`, `icon*.png`, `icon.svg`: instalação na tela inicial do celular.
+- `sw.js`: service worker (abertura rápida e uso offline).
