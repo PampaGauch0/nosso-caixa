@@ -1191,12 +1191,21 @@ async function start() {
   $('#sair-btn').onclick = () => auth.signOut();
   let unsub = [];
   const onErr = e => {
-    if (e?.code === 'permission-denied') { S.canWrite = false; setLive(false, 'Sem acesso'); showBanner(); return; }
+    if (e?.code === 'permission-denied') {
+      unsub.forEach(f => f()); unsub = [];
+      S.lanc = []; S.metas = []; changed(); setLive(false, 'Sem acesso');
+      $('#ad-email').textContent = auth.currentUser?.email || ''; $('#login').hidden = false; showPane('auth-denied'); return;
+    }
     setLive(false, 'Desconectado');
   };
   function subscribe() {
     unsub.forEach(f => f()); unsub = [];
-    unsub.push(db.doc('acesso/membros').onSnapshot(s => { S.acesso = s.exists ? s.data() : { dono: DONO, emails: [DONO] }; if (S.tab === 'ajustes') render(); }, onErr));
+    unsub.push(db.doc('acesso/membros').onSnapshot(s => {
+      S.acesso = s.exists ? s.data() : { dono: DONO, emails: [DONO] };
+      // Primeiro acesso do administrador: cria a lista de pessoas autorizadas.
+      if (!s.exists && !s.metadata.fromCache && S.isDono) db.doc('acesso/membros').set({ dono: DONO, emails: [DONO] }).catch(() => {});
+      if (S.tab === 'ajustes') render();
+    }, onErr));
     unsub.push(db.doc('config/geral').onSnapshot(s => {
       if (s.exists) { const d = s.data(); S.cfg = Object.assign(clone(DEF), clone(d)); if (!d.categorias?.length) S.cfg.categorias = clone(DEF.categorias); }
       const em = S.email;
@@ -1229,14 +1238,8 @@ async function start() {
     S.email = (u.email || '').toLowerCase(); S.isDono = !!DONO && S.email === DONO;
     $('#login').hidden = false;
     if (!u.emailVerified) { $('#av-email').textContent = u.email; showPane('auth-verify'); return; }
-    try {
-      const snap = await db.doc('acesso/membros').get({ source: 'server' });
-      if (!snap.exists && S.isDono) await db.doc('acesso/membros').set({ dono: DONO, emails: [DONO] });
-      else if (!snap.exists) throw { code: 'permission-denied' };
-    } catch (e) {
-      if (e?.code === 'permission-denied') { $('#ad-email').textContent = u.email; showPane('auth-denied'); return; }
-      if (e?.code !== 'unavailable') { msg('Não foi possível conectar: ' + (e?.message || e?.code)); return; }
-    }
+    // Entra na hora (inclusive offline); as regras do servidor decidem o acesso e,
+    // se a conta não for autorizada, os listeners recebem permission-denied e mostram o aviso.
     msg(''); $('#login').hidden = true;
     S.canWrite = true; showBanner(); $('#fab').hidden = false;
     atalhoInicial();
