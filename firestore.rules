@@ -13,6 +13,35 @@ service cloud.firestore {
         || (exists(caminhoAcesso()) && email() in get(caminhoAcesso()).data.emails));
     }
 
+    function textoOk(d, campo, max) { return !(campo in d) || (d[campo] is string && d[campo].size() <= max); }
+    function dataOk(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function pessoaOk(d, campo) { return !(campo in d) || d[campo] in ['a', 'b']; }
+
+    // Formato mínimo de um lançamento: impede dados corrompidos ou maliciosos.
+    function lancamentoOk(d) {
+      return d.size() <= 25
+        && d.tipo in ['despesa', 'receita', 'acerto']
+        && d.quem in ['a', 'b']
+        && d.valor is number && d.valor > 0 && d.valor <= 100000000
+        && dataOk(d.data)
+        && pessoaOk(d, 'atualizadoPor')
+        && textoOk(d, 'descricao', 200) && textoOk(d, 'categoria', 120) && textoOk(d, 'obs', 500)
+        && (!('escopo' in d) || d.escopo in ['individual', 'conjunto']);
+    }
+    function metaOk(d) {
+      return d.size() <= 15
+        && d.nome is string && d.nome.size() > 0 && d.nome.size() <= 120
+        && d.alvo is number && d.alvo > 0 && d.alvo <= 100000000
+        && (!('prazo' in d) || d.prazo == '' || dataOk(d.prazo))
+        && (!('aportes' in d) || (d.aportes is list && d.aportes.size() <= 2000))
+        && pessoaOk(d, 'atualizadoPor');
+    }
+    function configOk(d) {
+      return d.size() <= 20
+        && (!('categorias' in d) || (d.categorias is list && d.categorias.size() <= 100))
+        && (!('pessoas' in d) || d.pessoas is map);
+    }
+
     match /acesso/membros {
       allow read: if ehMembro();
       allow create, update: if ehDono()
@@ -23,9 +52,18 @@ service cloud.firestore {
         && dono() in request.resource.data.emails;
       allow delete: if false;
     }
-    match /config/{id}      { allow read, write: if ehMembro(); }
-    match /lancamentos/{id} { allow read, write: if ehMembro(); }
-    match /metas/{id}       { allow read, write: if ehMembro(); }
+    match /config/{id} {
+      allow read: if ehMembro();
+      allow write: if ehMembro() && id == 'geral' && configOk(request.resource.data);
+    }
+    match /lancamentos/{id} {
+      allow read, delete: if ehMembro();
+      allow create, update: if ehMembro() && lancamentoOk(request.resource.data);
+    }
+    match /metas/{id} {
+      allow read, delete: if ehMembro();
+      allow create, update: if ehMembro() && metaOk(request.resource.data);
+    }
     // Qualquer outro caminho fica bloqueado.
   }
 }

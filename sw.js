@@ -1,10 +1,11 @@
 // Service worker do Nosso Caixa: abre o app rápido e sem internet.
 // Os dados financeiros NÃO passam por aqui: o Firestore cuida da sincronização e do cache offline.
-const VERSAO = 'nosso-caixa-v4';
+const VERSAO = 'nosso-caixa-v5';
 
 const APP = [
   './',
   './index.html',
+  './app.js',
   './firebase-config.js',
   './manifest.webmanifest',
   './icon.svg',

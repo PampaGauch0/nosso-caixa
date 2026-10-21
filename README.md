@@ -26,8 +26,17 @@ O app abre em tela cheia, funciona sem internet (os lançamentos feitos offline 
 
 ## Arquivos
 
-- `index.html`: o aplicativo.
+- `index.html`: estrutura da página e política de segurança (CSP).
+- `app.js`: lógica do aplicativo.
 - `firebase-config.js`: configuração pública do Firebase e e-mail do administrador.
 - `firestore.rules`: cópia das regras de segurança publicadas no Firestore.
 - `manifest.webmanifest`, `icon*.png`, `icon.svg`: instalação na tela inicial do celular.
 - `sw.js`: service worker (abertura rápida e uso offline).
+
+## Segurança
+
+- Regras do Firestore exigem login com e-mail confirmado, conta autorizada e dados no formato esperado.
+- O app trata tudo que vem do banco como não confiável (texto escapado, campos normalizados) e usa uma Content-Security-Policy que bloqueia scripts injetados.
+- **Sair** apaga a cópia offline dos dados guardada no aparelho.
+- A planilha exportada (CSV) neutraliza fórmulas para não executar nada ao ser aberta.
+
